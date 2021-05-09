@@ -100,6 +100,8 @@ import java.util.Collection;
  * the same thread. Attempts to exceed this limit result in
  * {@link Error} throws from locking methods.
  *
+ * ReentrantLock使用的是独占模式
+ *
  * @since 1.5
  * @author Doug Lea
  */
@@ -119,6 +121,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         /**
          * Performs {@link Lock#lock}. The main reason for subclassing
          * is to allow fast path for nonfair version.
+         *
+         * 加锁方法有两种实现方式：公平锁（FairSync.lock），非公平锁（NonfairSync.lock）
          */
         abstract void lock();
 
@@ -194,6 +198,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 
     /**
      * Sync object for non-fair locks
+     *
+     * 非公平锁
      */
     static final class NonfairSync extends Sync {
         private static final long serialVersionUID = 7316153563782823691L;
@@ -203,6 +209,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * acquire on failure.
          */
         final void lock() {
+            //与公平锁不同的是，不管队列中有没有等待的线程都先去抢下锁，抢到了直接该线程去访问锁资源，无需排队
             if (compareAndSetState(0, 1))
                 setExclusiveOwnerThread(Thread.currentThread());
             else
@@ -216,6 +223,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 
     /**
      * Sync object for fair locks
+     *
+     * 公平锁
      */
     static final class FairSync extends Sync {
         private static final long serialVersionUID = -3000897897090466540L;
@@ -227,18 +236,27 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         /**
          * Fair version of tryAcquire.  Don't grant access unless
          * recursive call or no waiters or is first.
+         *
+         * 公平锁版本的tryAcquire实现。
          */
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
+            // c == 0 此时没有线程占用锁
             if (c == 0) {
+                // hasQueuedPredecessors检测需不需要去队列排队
+                // compareAndSetState抢锁
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
+                    // 不需要排队并且抢到锁资源，将独占线程设置为当前线程。不需要设置与下一个节点的连接关系；
+                    // 此为公平实现，不需要排队说明没有其他节点或者占用锁的线程为当前线程（与下一个节点已存在关系）
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
+            // 此时有线程占用锁，判断占用锁的线程是不是当前线程
             else if (current == getExclusiveOwnerThread()) {
+                // 如果占用锁的线程是当前线程，state自增1即可
                 int nextc = c + acquires;
                 if (nextc < 0)
                     throw new Error("Maximum lock count exceeded");
