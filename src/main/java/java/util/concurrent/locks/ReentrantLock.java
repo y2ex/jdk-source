@@ -100,7 +100,7 @@ import java.util.Collection;
  * the same thread. Attempts to exceed this limit result in
  * {@link Error} throws from locking methods.
  *
- * ReentrantLock使用的是独占模式
+ * ReentrantLock使用的是独占模式，有公平与非公平两种方式
  *
  * @since 1.5
  * @author Doug Lea

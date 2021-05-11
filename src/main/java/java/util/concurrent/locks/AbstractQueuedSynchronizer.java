@@ -680,9 +680,12 @@ public abstract class AbstractQueuedSynchronizer
          * just the next node.  But if cancelled or apparently null,
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
+         *
+         * 若后续节点为空，或者状态waitStatus为CANCELLED=1（已失效），则从尾部节点往前遍历找到最前面的一个处于正常阻塞状态的节点进行唤醒
          */
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
+            //当前节点
             s = null;
             for (Node t = tail; t != null && t != node; t = t.prev)
                 if (t.waitStatus <= 0)
@@ -823,13 +826,13 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if thread should block
      */
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
-        int ws = pred.waitStatus;
+        int ws = pred.waitStatus;   // 获取前置节点的状态
         if (ws == Node.SIGNAL)
             /*
              * This node has already set status asking a release
              * to signal it, so it can safely park.
              *
-             * 前置节点的waitStatus为Node.SIGNAL=-1，当前线程可以安全的阻塞
+             * 前置节点的状态waitStatus为SIGNAL=-1，当前线程可以安全的阻塞
              */
             return true;
         if (ws > 0) {
@@ -837,7 +840,7 @@ public abstract class AbstractQueuedSynchronizer
              * Predecessor was cancelled. Skip over predecessors and
              * indicate retry.
              *
-             * 如果前置节点的waitStatus>0，即waitStatus=1，需要从同步状态队列中取消等待
+             * 如果前置节点的状态waitStatus>0，即waitStatus为CANCELLED=1（无效），需要从同步状态队列中取消等待（移除队列）
              */
             do {
                 node.prev = pred = pred.prev;
@@ -849,7 +852,7 @@ public abstract class AbstractQueuedSynchronizer
              * need a signal, but don't park yet.  Caller will need to
              * retry to make sure it cannot acquire before parking.
              *
-             * 将前置状态的waitStatus修改为Node.SIGNAL=-1
+             * 将前置状态的waitStatus修改为SIGNAL=-1，然后当前节点才可以被安全的阻塞
              */
             compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
@@ -858,6 +861,8 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Convenience method to interrupt current thread.
+     *
+     * 中断当前线程，实际上只是给线程设置一个中断标志，线程仍会继续运行。
      */
     static void selfInterrupt() {
         Thread.currentThread().interrupt();
@@ -866,10 +871,13 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Convenience method to park and then check if interrupted
      *
+     * 阻塞当前节点，返回当前线程的中断状态
+     * LockSupport.park 底层实现逻辑调用系统内核功能 pthread_mutex_lock 阻塞线程
+     *
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
-        LockSupport.park(this);
+        LockSupport.park(this); //阻塞
         return Thread.interrupted();
     }
 
@@ -886,6 +894,8 @@ public abstract class AbstractQueuedSynchronizer
      * Acquires in exclusive uninterruptible mode for thread already in
      * queue. Used by condition wait methods as well as acquire.
      *
+     * 已经在队列当中的Thread节点，准备阻塞等待获取锁
+     *
      * @param node the node
      * @param arg the acquire argument
      * @return {@code true} if interrupted while waiting
@@ -895,9 +905,10 @@ public abstract class AbstractQueuedSynchronizer
         try {
             boolean interrupted = false;
             for (;;) {
+                // 当前节点的前置节点
                 final Node p = node.predecessor();
-                //入队前会先判断下该节点的前置节点是否是头节点（此时头结点有可能会释放锁）；然后尝试去抢锁
-                //解锁之后，在公平锁场景下会抢锁成功。但是在非公平锁场景下有可能会抢锁失败，这时候会继续往下执行 阻塞线程
+                // 入队前会先判断下该节点的前置节点是否是头节点（此时头结点有可能会释放锁）；然后尝试去抢锁
+                // 在非公平锁场景下有可能会抢锁失败，这时候会继续往下执行 阻塞线程
                 if (p == head && tryAcquire(arg)) {
                     //如果抢到锁，将头节点后移（也就是将该节点设置为头结点）
                     setHead(node);
@@ -905,13 +916,12 @@ public abstract class AbstractQueuedSynchronizer
                     failed = false;
                     return interrupted;
                 }
-                //解锁之后的自旋；非公平锁场景下，因为解锁时候将节点状态设置为0，这一次进入判断会阻塞失败，第一次会先将状态设置为-1，继续自旋
+                // 如果前置节点不是头结点，或者当前节点抢锁失败；通过shouldParkAfterFailedAcquire判断是否应该阻塞
+                // 当前置节点的状态为SIGNAL=-1，才可以安全被parkAndCheckInterrupt阻塞线程
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     parkAndCheckInterrupt())
-                    //当前线程可以安全阻塞，并且阻塞成功
-                    //解锁时候会将该线程waitStatus设置为0
+                    // 该线程已被中断
                     interrupted = true;
-                //当前线程不能安全阻塞或者阻塞失败以及当前线程解锁之后，自旋
             }
         } finally {
             if (failed)
