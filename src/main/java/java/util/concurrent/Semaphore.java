@@ -240,8 +240,10 @@ public class Semaphore implements java.io.Serializable {
             super(permits);
         }
 
+        // 共享模式获取锁实现
         protected int tryAcquireShared(int acquires) {
             for (;;) {
+                // hasQueuedPredecessors检测需不需要去队列排队
                 if (hasQueuedPredecessors())
                     return -1;
                 int available = getState();
@@ -269,7 +271,7 @@ public class Semaphore implements java.io.Serializable {
      * Creates a {@code Semaphore} with the given number of
      * permits and the given fairness setting.
      *
-     * @param permits the initial number of permits available.
+     * @param permits the initial number of permits available. 许可证的初始可用数量。
      *        This value may be negative, in which case releases
      *        must occur before any acquires will be granted.
      * @param fair {@code true} if this semaphore will guarantee

@@ -193,6 +193,7 @@ public class CountDownLatch {
      *
      * @param count the number of times {@link #countDown} must be invoked
      *        before threads can pass through {@link #await}
+     *        count为线程的数量
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public CountDownLatch(int count) {
@@ -223,6 +224,8 @@ public class CountDownLatch {
      * </ul>
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
+     *
+     * 调用await()方法的线程会被挂起，它会等待直到count值为0才继续执行
      *
      * @throws InterruptedException if the current thread is interrupted
      *         while waiting
