@@ -232,6 +232,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The default initial capacity - MUST be a power of two.
+     *
+     * 默认初始化容量
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
 
@@ -239,11 +241,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
+     *
+     * 集合最大容量
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
      * The load factor used when none specified in constructor.
+     *
+     * 默认加载因子的值
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
@@ -254,6 +260,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * than 2 and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
+     *
+     * 当链表的值数量大于8时，会从链表转成红黑树
      */
     static final int TREEIFY_THRESHOLD = 8;
 
@@ -261,6 +269,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
+     *
+     * 当链表的值数量小于6时，会从红黑树转回链表
      */
     static final int UNTREEIFY_THRESHOLD = 6;
 
@@ -269,6 +279,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * (Otherwise the table is resized if too many nodes in a bin.)
      * Should be at least 4 * TREEIFY_THRESHOLD to avoid conflicts
      * between resizing and treeification thresholds.
+     *
+     * 当Map中数量超过这个值才会转成红黑树，否则优先进行扩容
      */
     static final int MIN_TREEIFY_CAPACITY = 64;
 
@@ -374,6 +386,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Returns a power of two size for the given target capacity.
+     *
+     * 对于给定的目标容量，进行位运算。返回的值是2的指数幂。
      */
     static final int tableSizeFor(int cap) {
         int n = cap - 1;
@@ -403,6 +417,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The number of key-value mappings contained in this map.
+     *
+     * 实际存放数据数量
      */
     transient int size;
 
@@ -412,6 +428,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * the HashMap or otherwise modify its internal structure (e.g.,
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
+     *
+     * 修改次数
      */
     transient int modCount;
 
@@ -419,6 +437,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The next size value at which to resize (capacity * load factor).
      *
      * @serial
+     *
+     * 阈值。阈值=容量*加载因子；默认为16*0.75=12。当元素数量超过阈值便会触发扩容。
      */
     // (The javadoc description is true upon serialization.
     // Additionally, if the table array has not been allocated, this
@@ -430,6 +450,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The load factor for the hash table.
      *
      * @serial
+     *
+     * 加载因子，默认是0.75，一般使用默认值。
      */
     final float loadFactor;
 
@@ -454,6 +476,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             throw new IllegalArgumentException("Illegal load factor: " +
                                                loadFactor);
         this.loadFactor = loadFactor;
+        // 对给定的容量值重新计算，返回一个2的指数次幂的值。此时容量值大小为0。
         this.threshold = tableSizeFor(initialCapacity);
     }
 
@@ -474,6 +497,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     public HashMap() {
         this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
+        // 此时阈值和容量值都为0
     }
 
     /**
@@ -626,6 +650,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                    boolean evict) {
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         if ((tab = table) == null || (n = tab.length) == 0)
+            // 如果table为空，会先进行扩容
             n = (tab = resize()).length;
         if ((p = tab[i = (n - 1) & hash]) == null)
             tab[i] = newNode(hash, key, value, null);
@@ -673,28 +698,38 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * with a power of two offset in the new table.
      *
      * @return the table
+     *
+     * 扩容方法
      */
     final Node<K,V>[] resize() {
         Node<K,V>[] oldTab = table;
-        int oldCap = (oldTab == null) ? 0 : oldTab.length;
-        int oldThr = threshold;
+        int oldCap = (oldTab == null) ? 0 : oldTab.length;  // 原容量值
+        int oldThr = threshold; // 原阈值
         int newCap, newThr = 0;
         if (oldCap > 0) {
             if (oldCap >= MAXIMUM_CAPACITY) {
+                // 原容量大小已达到最大值，不进行扩容。同时将阈值设置为Integer.MAX_VALUE
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
             else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
+                // newCap新容量扩容为老容量的2倍
+                // 如果原容量值大于等于默认值16，同时将新阈值扩容为原阈值的2倍
                 newThr = oldThr << 1; // double threshold
         }
         else if (oldThr > 0) // initial capacity was placed in threshold
+            // 如果原容量等于0，原阈值大于0；这种情况为新创建一个带参的对象，还未添加数据【HashMap(int initialCapacity, float loadFactor)或者HashMap(int initialCapacity)】
+            // 则新容量大小等于原阈值大小（默认为16），新阈值大小会在下面统一计算（此时新阈值大小为0）。
             newCap = oldThr;
         else {               // zero initial threshold signifies using defaults
+            // 如果原容量等于0，原阈值也等于0；这种情况为新创建一个无参构造，还未添加数据
+            // 则将新容量值大小设置为默认值16，新阈值大小设置为12
             newCap = DEFAULT_INITIAL_CAPACITY;
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
         }
         if (newThr == 0) {
+            // 如果新阈值大小为0，则会通过 新容量值大小*加载因子 计算，如果新容量值大小或者新阈值大小超出最大容量值，则将新阈值设置为Integer.MAX_VALUE
             float ft = (float)newCap * loadFactor;
             newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
                       (int)ft : Integer.MAX_VALUE);
