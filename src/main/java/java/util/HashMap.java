@@ -476,7 +476,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             throw new IllegalArgumentException("Illegal load factor: " +
                                                loadFactor);
         this.loadFactor = loadFactor;
-        // 对给定的容量值重新计算，返回一个2的指数次幂的值。此时容量值大小为0。
+        // 阈值，初始化时候是没有*加载因子的。对给定的容量值重新计算，返回一个2的指数次幂的值。此时容量值大小为0。
         this.threshold = tableSizeFor(initialCapacity);
     }
 
@@ -520,18 +520,23 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @param m the map
      * @param evict false when initially constructing this map, else
      * true (relayed to method afterNodeInsertion).
+     *
+     * Map.putAll方法，Map构造函数 会调用该方法
      */
     final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
         int s = m.size();
+        // 如果传入的集合大小=0不进行操作
         if (s > 0) {
             if (table == null) { // pre-size
                 float ft = ((float)s / loadFactor) + 1.0F;
                 int t = ((ft < (float)MAXIMUM_CAPACITY) ?
                          (int)ft : MAXIMUM_CAPACITY);
                 if (t > threshold)
+                    // 根据t计算阈值，返回一个2的指数次幂的值（返回的结果是>=t最小的一个2的指数次幂）
                     threshold = tableSizeFor(t);
             }
             else if (s > threshold)
+                // 如果table!=null && s>threshold，进行扩容处理
                 resize();
             for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
                 K key = e.getKey();
