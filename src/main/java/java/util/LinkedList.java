@@ -90,6 +90,8 @@ public class LinkedList<E>
      * Pointer to first node.
      * Invariant: (first == null && last == null) ||
      *            (first.prev == null && first.item != null)
+     *
+     * 头结点
      */
     transient Node<E> first;
 
@@ -97,6 +99,8 @@ public class LinkedList<E>
      * Pointer to last node.
      * Invariant: (first == null && last == null) ||
      *            (last.next == null && last.item != null)
+     *
+     * 尾结点
      */
     transient Node<E> last;
 
@@ -121,32 +125,36 @@ public class LinkedList<E>
 
     /**
      * Links e as first element.
+     *
+     * 在链表最前面添加元素
      */
     private void linkFirst(E e) {
-        final Node<E> f = first;
-        final Node<E> newNode = new Node<>(null, e, f);
-        first = newNode;
-        if (f == null)
+        final Node<E> f = first;    // 原头节点
+        final Node<E> newNode = new Node<>(null, e, f); // 新建一个节点，要添加的元素
+        first = newNode;    // 将头结点指向该新建的节点
+        if (f == null)  // 如果原头结点为空，说明原链表为空。这是添加的第一个元素，将尾结点也指向该新建的节点
             last = newNode;
-        else
+        else    // 如果原头结点不为空，则将原头结点的前置节点指向该新建的节点
             f.prev = newNode;
-        size++;
-        modCount++;
+        size++; // 元素数量+1
+        modCount++; // 修改次数+1
     }
 
     /**
      * Links e as last element.
+     *
+     * 在链表最后面添加元素
      */
     void linkLast(E e) {
-        final Node<E> l = last;
-        final Node<E> newNode = new Node<>(l, e, null);
-        last = newNode;
-        if (l == null)
+        final Node<E> l = last; // 原尾结点
+        final Node<E> newNode = new Node<>(l, e, null); // 新建一个节点，要添加的元素
+        last = newNode; // 将尾结点指向该新建的节点
+        if (l == null)  // 如果尾头结点为空，说明原链表为空。这是添加的第一个元素，将头结点也指向该新建的节点
             first = newNode;
-        else
+        else    // 如果原尾结点不为空，则将原尾结点的后继节点指向该新建的节点
             l.next = newNode;
-        size++;
-        modCount++;
+        size++; // 元素数量+1
+        modCount++; // 修改次数+1
     }
 
     /**
@@ -403,13 +411,14 @@ public class LinkedList<E>
      * @throws NullPointerException if the specified collection is null
      */
     public boolean addAll(int index, Collection<? extends E> c) {
-        checkPositionIndex(index);
+        checkPositionIndex(index);  // 检验下标是否越界
 
         Object[] a = c.toArray();
         int numNew = a.length;
         if (numNew == 0)
             return false;
 
+        // pred:前置节点，在该节点之后插入元素。succ：该索引位节点。
         Node<E> pred, succ;
         if (index == size) {
             succ = null;
@@ -419,14 +428,15 @@ public class LinkedList<E>
             pred = succ.prev;
         }
 
+        // 将数组设置为链表
         for (Object o : a) {
             @SuppressWarnings("unchecked") E e = (E) o;
-            Node<E> newNode = new Node<>(pred, e, null);
-            if (pred == null)
+            Node<E> newNode = new Node<>(pred, e, null);    // 新建一个节点，指向前置节点
+            if (pred == null)   // 如果前置节点为空，说明该链表为空。将头节点指向当前节点
                 first = newNode;
-            else
+            else    // 前置节点的后继节点指向当前节点
                 pred.next = newNode;
-            pred = newNode;
+            pred = newNode; // 将当前节点设置为前置节点，供后面需要插入的节点使用
         }
 
         if (succ == null) {
@@ -504,11 +514,11 @@ public class LinkedList<E>
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
-        checkPositionIndex(index);
+        checkPositionIndex(index);  // 检验下标是否越界
 
-        if (index == size)
+        if (index == size)  // 如果要插入的索引等于现有元素长度，说明是要在尾部插入元素
             linkLast(element);
-        else
+        else    // 否则，获取该索引节点，在该节点之前插入元素
             linkBefore(element, node(index));
     }
 
