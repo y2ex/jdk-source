@@ -134,11 +134,15 @@ public class Hashtable<K,V>
 
     /**
      * The hash table data.
+     *
+     * 存放hash表数据
      */
     private transient Entry<?,?>[] table;
 
     /**
      * The total number of entries in the hash table.
+     *
+     * 元素数量
      */
     private transient int count;
 
@@ -147,6 +151,8 @@ public class Hashtable<K,V>
      * value of this field is (int)(capacity * loadFactor).)
      *
      * @serial
+     *
+     * 阈值。元素数量达到该值，进行扩容
      */
     private int threshold;
 
@@ -154,6 +160,8 @@ public class Hashtable<K,V>
      * The load factor for the hashtable.
      *
      * @serial
+     *
+     * 加载因子
      */
     private float loadFactor;
 
@@ -163,6 +171,8 @@ public class Hashtable<K,V>
      * the Hashtable or otherwise modify its internal structure (e.g.,
      * rehash).  This field is used to make iterators on Collection-views of
      * the Hashtable fail-fast.  (See ConcurrentModificationException).
+     *
+     * 修改次数
      */
     private transient int modCount = 0;
 
@@ -184,11 +194,12 @@ public class Hashtable<K,V>
                                                initialCapacity);
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal Load: "+loadFactor);
-
+        // 如果初始化容量传入的是0，则默认使用1
         if (initialCapacity==0)
             initialCapacity = 1;
         this.loadFactor = loadFactor;
         table = new Entry<?,?>[initialCapacity];
+        // 计算阈值。预计的阈值为初始化容量*加载因子，预计的阈值如果大于MAX_ARRAY_SIZE + 1，则实际阈值设置为MAX_ARRAY_SIZE + 1
         threshold = (int)Math.min(initialCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
     }
 
@@ -201,6 +212,7 @@ public class Hashtable<K,V>
      *              than zero.
      */
     public Hashtable(int initialCapacity) {
+        // 传入初始化容量，加载因子使用默认值0.75。初始化容量传入的是多少就初始化多大（0除外；传入的如果0，默认使用1），不用重新计算
         this(initialCapacity, 0.75f);
     }
 
@@ -209,6 +221,7 @@ public class Hashtable<K,V>
      * and load factor (0.75).
      */
     public Hashtable() {
+        // 默认初始化容量11，默认加载因子0.75
         this(11, 0.75f);
     }
 
@@ -222,6 +235,7 @@ public class Hashtable<K,V>
      * @since   1.2
      */
     public Hashtable(Map<? extends K, ? extends V> t) {
+        // 初始化容量为传入集合元素数量的2倍（至少为11），加载因子使用默认值0.75
         this(Math.max(2*t.size(), 11), 0.75f);
         putAll(t);
     }
@@ -388,25 +402,28 @@ public class Hashtable<K,V>
      */
     @SuppressWarnings("unchecked")
     protected void rehash() {
-        int oldCapacity = table.length;
-        Entry<?,?>[] oldMap = table;
+        int oldCapacity = table.length; // 原容量值
+        Entry<?,?>[] oldMap = table;    // 原数组
 
         // overflow-conscious code
-        int newCapacity = (oldCapacity << 1) + 1;
+        int newCapacity = (oldCapacity << 1) + 1;   // 预计扩容的容量为原容量的2倍+1
         if (newCapacity - MAX_ARRAY_SIZE > 0) {
-            if (oldCapacity == MAX_ARRAY_SIZE)
+            if (oldCapacity == MAX_ARRAY_SIZE)  // 预计扩容容量如果大于容量最大值，并且原容量为容量最大值，则不进行扩容处理
                 // Keep running with MAX_ARRAY_SIZE buckets
                 return;
-            newCapacity = MAX_ARRAY_SIZE;
+            newCapacity = MAX_ARRAY_SIZE;   // 预计扩容容量如果大于容量最大值，则将新容量设置为容量最大值
         }
-        Entry<?,?>[] newMap = new Entry<?,?>[newCapacity];
+        Entry<?,?>[] newMap = new Entry<?,?>[newCapacity];  // 构建一个新数组
 
-        modCount++;
+        modCount++; // 修改次数+1
+        // 计算阈值。新容量值*加载因子，与容量最大值+1，两个比较取最小值
         threshold = (int)Math.min(newCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
         table = newMap;
 
         for (int i = oldCapacity ; i-- > 0 ;) {
+            // 遍历原数组，从后往前
             for (Entry<K,V> old = (Entry<K,V>)oldMap[i] ; old != null ; ) {
+                // 遍历该索引位链表，这里与jdk8中hashmap有点区别，这里是在链表头部插入（和之前链表会反过来），hashmap是在尾部插入
                 Entry<K,V> e = old;
                 old = old.next;
 
@@ -421,7 +438,7 @@ public class Hashtable<K,V>
         modCount++;
 
         Entry<?,?> tab[] = table;
-        if (count >= threshold) {
+        if (count >= threshold) {   // 判断是否元素数量是否达到阈值，如果达到先进行扩容处理
             // Rehash the table if the threshold is exceeded
             rehash();
 
@@ -433,6 +450,7 @@ public class Hashtable<K,V>
         // Creates the new entry.
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>) tab[index];
+        // 插入元素是在链表头部插入
         tab[index] = new Entry<>(hash, key, value, e);
         count++;
     }
@@ -457,6 +475,7 @@ public class Hashtable<K,V>
     public synchronized V put(K key, V value) {
         // Make sure the value is not null
         if (value == null) {
+            // value为空，会抛出空指针异常
             throw new NullPointerException();
         }
 
@@ -468,12 +487,13 @@ public class Hashtable<K,V>
         Entry<K,V> entry = (Entry<K,V>)tab[index];
         for(; entry != null ; entry = entry.next) {
             if ((entry.hash == hash) && entry.key.equals(key)) {
+                // 该key已经存在，直接替换原值
                 V old = entry.value;
                 entry.value = value;
                 return old;
             }
         }
-
+        // 添加元素
         addEntry(hash, key, value, index);
         return null;
     }
@@ -521,6 +541,7 @@ public class Hashtable<K,V>
      */
     public synchronized void putAll(Map<? extends K, ? extends V> t) {
         for (Map.Entry<? extends K, ? extends V> e : t.entrySet())
+            // 遍历调用put方法
             put(e.getKey(), e.getValue());
     }
 
