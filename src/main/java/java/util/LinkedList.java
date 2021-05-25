@@ -175,6 +175,8 @@ public class LinkedList<E>
 
     /**
      * Unlinks non-null first node f.
+     *
+     * 将头结点的下一个节点设置为新的头结点，并将原头节点置为空
      */
     private E unlinkFirst(Node<E> f) {
         // assert f == first && f != null;
@@ -194,6 +196,8 @@ public class LinkedList<E>
 
     /**
      * Unlinks non-null last node l.
+     *
+     * 将尾结点的上一个节点设置为新的尾结点，并将原尾节点置为空
      */
     private E unlinkLast(Node<E> l) {
         // assert l == last && l != null;
@@ -213,6 +217,8 @@ public class LinkedList<E>
 
     /**
      * Unlinks non-null node x.
+     *
+     * 将该节点前置节点的下一个节点指向该节点后继节点，将该节点后继节点的上一个节点指向该节点前置节点。并将该节点置为空
      */
     E unlink(Node<E> x) {
         // assert x != null;
@@ -245,6 +251,8 @@ public class LinkedList<E>
      *
      * @return the first element in this list
      * @throws NoSuchElementException if this list is empty
+     *
+     * 获取队头元素，但是不删除队列的头元素（实现双端队列Deque中的方法）
      */
     public E getFirst() {
         final Node<E> f = first;
@@ -258,6 +266,8 @@ public class LinkedList<E>
      *
      * @return the last element in this list
      * @throws NoSuchElementException if this list is empty
+     *
+     * 获取队尾元素，但是不删除队列的尾元素（实现双端队列Deque中的方法）
      */
     public E getLast() {
         final Node<E> l = last;
@@ -296,6 +306,8 @@ public class LinkedList<E>
      * Inserts the specified element at the beginning of this list.
      *
      * @param e the element to add
+     *
+     * 添加元素到头结点（实现双端队列Deque中的方法）
      */
     public void addFirst(E e) {
         linkFirst(e);
@@ -307,6 +319,8 @@ public class LinkedList<E>
      * <p>This method is equivalent to {@link #add}.
      *
      * @param e the element to add
+     *
+     * 添加元素到尾结点（实现双端队列Deque中的方法）
      */
     public void addLast(E e) {
         linkLast(e);
@@ -656,6 +670,8 @@ public class LinkedList<E>
      *
      * @return the head of this list, or {@code null} if this list is empty
      * @since 1.5
+     *
+     * 队列的查，获取对头元素
      */
     public E peek() {
         final Node<E> f = first;
@@ -678,6 +694,8 @@ public class LinkedList<E>
      *
      * @return the head of this list, or {@code null} if this list is empty
      * @since 1.5
+     *
+     * 队列的删除方法（队列Queue中的方法）
      */
     public E poll() {
         final Node<E> f = first;
@@ -701,6 +719,8 @@ public class LinkedList<E>
      * @param e the element to add
      * @return {@code true} (as specified by {@link Queue#offer})
      * @since 1.5
+     *
+     * 队列的添加方法（队列Queue中的方法）
      */
     public boolean offer(E e) {
         return add(e);
@@ -713,6 +733,8 @@ public class LinkedList<E>
      * @param e the element to insert
      * @return {@code true} (as specified by {@link Deque#offerFirst})
      * @since 1.6
+     *
+     * 添加元素到头结点（实现双端队列Deque中的方法）
      */
     public boolean offerFirst(E e) {
         addFirst(e);
@@ -725,6 +747,8 @@ public class LinkedList<E>
      * @param e the element to insert
      * @return {@code true} (as specified by {@link Deque#offerLast})
      * @since 1.6
+     *
+     * 添加元素到尾节点（实现双端队列Deque中的方法）
      */
     public boolean offerLast(E e) {
         addLast(e);
@@ -738,6 +762,8 @@ public class LinkedList<E>
      * @return the first element of this list, or {@code null}
      *         if this list is empty
      * @since 1.6
+     *
+     * 获取队头元素 ，但是不删除队列的头元素
      */
     public E peekFirst() {
         final Node<E> f = first;
@@ -751,6 +777,8 @@ public class LinkedList<E>
      * @return the last element of this list, or {@code null}
      *         if this list is empty
      * @since 1.6
+     *
+     * 获取队尾元素 ，但是不删除队列的尾元素
      */
     public E peekLast() {
         final Node<E> l = last;
@@ -791,6 +819,8 @@ public class LinkedList<E>
      *
      * @param e the element to push
      * @since 1.6
+     *
+     * 栈的添加方法
      */
     public void push(E e) {
         addFirst(e);
@@ -806,6 +836,8 @@ public class LinkedList<E>
      *         of the stack represented by this list)
      * @throws NoSuchElementException if this list is empty
      * @since 1.6
+     *
+     * 栈的删除方法
      */
     public E pop() {
         return removeFirst();
