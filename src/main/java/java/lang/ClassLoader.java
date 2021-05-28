@@ -397,13 +397,17 @@ public abstract class ClassLoader {
     {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
+            // 首先会检查该类是否已经被本类加载器加载，如果已经被加载则直接返回
             Class<?> c = findLoadedClass(name);
             if (c == null) {
+                // 如果没有被加载，则委托父加载器去加载
                 long t0 = System.nanoTime();
                 try {
                     if (parent != null) {
+                        // 让父加载器对象去调用loadClass方法
                         c = parent.loadClass(name, false);
                     } else {
+                        // parent==null，说明父加载器是启动类加载器。启动类加载器是C++编写的，这里去调用本地方法区尝试加载该类。
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
@@ -415,6 +419,7 @@ public abstract class ClassLoader {
                     // If still not found, then invoke findClass in order
                     // to find the class.
                     long t1 = System.nanoTime();
+                    // 如果父加载器没有加载到该类，则自己去加载。这里会调用URLClassLoader类的indClass()方法
                     c = findClass(name);
 
                     // this is the defining class loader; record the stats
