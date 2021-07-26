@@ -117,18 +117,25 @@ public class TreeMap<K,V>
      * null if it uses the natural ordering of its keys.
      *
      * @serial
+     *
+     * 比较器
      */
     private final Comparator<? super K> comparator;
 
+    // 根节点
     private transient Entry<K,V> root;
 
     /**
      * The number of entries in the tree
+     *
+     * 元素总数量
      */
     private transient int size = 0;
 
     /**
      * The number of structural modifications to the tree.
+     *
+     * 修改次数
      */
     private transient int modCount = 0;
 
@@ -143,6 +150,8 @@ public class TreeMap<K,V>
      * put a string key into a map whose keys are integers), the
      * {@code put(Object key, Object value)} call will throw a
      * {@code ClassCastException}.
+     *
+     * 构建一个空的tree map。比较器为空，使用key自然排序，所有的key必须实现Comparable接口（TreeMap是有序的集合，比较器为空也不实现Comparable接口，就没办法进行排序）
      */
     public TreeMap() {
         comparator = null;
@@ -161,6 +170,8 @@ public class TreeMap<K,V>
      * @param comparator the comparator that will be used to order this map.
      *        If {@code null}, the {@linkplain Comparable natural
      *        ordering} of the keys will be used.
+     *
+     * 构建一个空的TreeMap，参数传入一个比较器，按照该实现规则进行排序
      */
     public TreeMap(Comparator<? super K> comparator) {
         this.comparator = comparator;
@@ -179,6 +190,8 @@ public class TreeMap<K,V>
      * @throws ClassCastException if the keys in m are not {@link Comparable},
      *         or are not mutually comparable
      * @throws NullPointerException if the specified map is null
+     *
+     * 传入一个map构建TreeMap，按照默认规则排序
      */
     public TreeMap(Map<? extends K, ? extends V> m) {
         comparator = null;
@@ -193,6 +206,8 @@ public class TreeMap<K,V>
      * @param  m the sorted map whose mappings are to be placed in this map,
      *         and whose comparator is to be used to sort this map
      * @throws NullPointerException if the specified map is null
+     *
+     * 传入一个sorted map，按照传递的map的排序规则进行排序
      */
     public TreeMap(SortedMap<K, ? extends V> m) {
         comparator = m.comparator();
@@ -534,9 +549,11 @@ public class TreeMap<K,V>
      */
     public V put(K key, V value) {
         Entry<K,V> t = root;
+        // 如果根节点为空，标识还未建立根节点。key校验通过之后构建根节点
         if (t == null) {
+            // 检查key是否为空
             compare(key, key); // type (and possibly null) check
-
+            // 构建根节点
             root = new Entry<>(key, value, null);
             size = 1;
             modCount++;
@@ -546,8 +563,9 @@ public class TreeMap<K,V>
         Entry<K,V> parent;
         // split comparator and comparable paths
         Comparator<? super K> cpr = comparator;
-        if (cpr != null) {
+        if (cpr != null) {  // 用户定义了比较器
             do {
+                // 从根节点循环往下进行比较，找到这个key的节点；如果之前集合不存在这个key，比较大小之后找到这个key的父节点
                 parent = t;
                 cmp = cpr.compare(key, t.key);
                 if (cmp < 0)
@@ -555,15 +573,16 @@ public class TreeMap<K,V>
                 else if (cmp > 0)
                     t = t.right;
                 else
-                    return t.setValue(value);
+                    return t.setValue(value); // cmp为0说明找到了key这个节点，替换原来的值
             } while (t != null);
         }
-        else {
-            if (key == null)
+        else { // 未定义比较器，使用默认规则进行比较
+            if (key == null)    // key不能为空
                 throw new NullPointerException();
             @SuppressWarnings("unchecked")
-                Comparable<? super K> k = (Comparable<? super K>) key;
+                Comparable<? super K> k = (Comparable<? super K>) key;  // 如果未定义比较器，TreeMap中的key都要实现Comparable接口，并重写compareTo接口
             do {
+                // 从根节点循环往下进行比较，找到这个key的节点；如果之前集合不存在这个key，比较大小之后找到这个key的父节点
                 parent = t;
                 cmp = k.compareTo(t.key);
                 if (cmp < 0)
@@ -574,11 +593,14 @@ public class TreeMap<K,V>
                     return t.setValue(value);
             } while (t != null);
         }
+        // 说明集合不存在这个key，重新构建一个节点，新构建的节点颜色默认是黑色
         Entry<K,V> e = new Entry<>(key, value, parent);
+        // 父节点需要继续该节点是在父节点的左侧子节点还是右侧子节点
         if (cmp < 0)
             parent.left = e;
         else
             parent.right = e;
+        // 调整红黑树（加入节点有可能会对红黑树结构造成破坏，通过fixAfterInsertion方法进行自动平衡处理）
         fixAfterInsertion(e);
         size++;
         modCount++;
@@ -2048,6 +2070,8 @@ public class TreeMap<K,V>
     /**
      * Node in the Tree.  Doubles as a means to pass key-value pairs back to
      * user (see Map.Entry).
+     *
+     * 树节点Entry实现了Map.Entry
      */
 
     static final class Entry<K,V> implements Map.Entry<K,V> {
@@ -2255,17 +2279,17 @@ public class TreeMap<K,V>
 
     /** From CLR */
     private void fixAfterInsertion(Entry<K,V> x) {
-        x.color = RED;
-
-        while (x != null && x != root && x.parent.color == RED) {
-            if (parentOf(x) == leftOf(parentOf(parentOf(x)))) {
-                Entry<K,V> y = rightOf(parentOf(parentOf(x)));
-                if (colorOf(y) == RED) {
+        x.color = RED;  // 把新增节点的颜色置为红色
+        // 新增节点为根节点或者新增节点父节点颜色为黑色，不进行处理
+        while (x != null && x != root && x.parent.color == RED) {   // 父节点颜色为红色
+            if (parentOf(x) == leftOf(parentOf(parentOf(x)))) { // 新增节点的父节点在新增节点祖父节点的左侧
+                Entry<K,V> y = rightOf(parentOf(parentOf(x)));  // 获取右伯父节点
+                if (colorOf(y) == RED) {    // 如果右伯父节点为红色。将父节点右伯父节点颜色设置为黑色，将祖父节点颜色设置为红色。将x指向祖父节点，继续循环
                     setColor(parentOf(x), BLACK);
                     setColor(y, BLACK);
                     setColor(parentOf(parentOf(x)), RED);
                     x = parentOf(parentOf(x));
-                } else {
+                } else {    // 如果右伯父节点为黑色
                     if (x == rightOf(parentOf(x))) {
                         x = parentOf(x);
                         rotateLeft(x);
@@ -2292,6 +2316,7 @@ public class TreeMap<K,V>
                 }
             }
         }
+        // 将根节点设置为黑色，根节点必须是黑色的（如果新增节点为根节点，刚刚第一步将新增节点设置为了红色）
         root.color = BLACK;
     }
 
@@ -2517,6 +2542,7 @@ public class TreeMap<K,V>
      * already set prior to calling this method.  (It ignores both fields.)
      *
      * @param level the current level of tree. Initial call should be 0.
+     *              当前树的等级
      * @param lo the first element index of this subtree. Initial should be 0.
      * @param hi the last element index of this subtree.  Initial should be
      *        size-1.

@@ -222,13 +222,20 @@ public class ArrayList<E> extends AbstractList<E>
         }
     }
 
+    /**
+     * 计算容量
+     */
     private static int calculateCapacity(Object[] elementData, int minCapacity) {
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+            // elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA，这种情况是无参构造创建的ArrayList对象。如果给定容量值小于默认值会初始化默认容量大小
             return Math.max(DEFAULT_CAPACITY, minCapacity);
         }
         return minCapacity;
     }
 
+    /**
+     *  确保容量。如果容量不足会进行扩容处理
+     */
     private void ensureCapacityInternal(int minCapacity) {
         ensureExplicitCapacity(calculateCapacity(elementData, minCapacity));
     }
@@ -238,6 +245,7 @@ public class ArrayList<E> extends AbstractList<E>
 
         // overflow-conscious code
         if (minCapacity - elementData.length > 0)
+            // 如果计算的容量值大于当前数组的长度，表示需要进行扩容
             grow(minCapacity);
     }
 
@@ -461,6 +469,7 @@ public class ArrayList<E> extends AbstractList<E>
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        // 确保容量，如果容量不够会进行扩容
         ensureCapacityInternal(size + 1);  // Increments modCount!!
         elementData[size++] = e;
         return true;

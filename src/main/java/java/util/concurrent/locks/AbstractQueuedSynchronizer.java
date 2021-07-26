@@ -1151,7 +1151,7 @@ public abstract class AbstractQueuedSynchronizer
      *         correctly.
      * @throws UnsupportedOperationException if exclusive mode is not supported
      *
-     * 如果子类未实现该方法，抛出未提供操作异常
+     * 独占模式获取锁，具体由子类实现
      */
     protected boolean tryAcquire(int arg) {
         throw new UnsupportedOperationException();
@@ -1275,7 +1275,7 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
      *
-     * tryAcquire方法有子类实现
+     * 独占模式获取锁
      */
     public final void acquire(int arg) {
         if (!tryAcquire(arg) &&
